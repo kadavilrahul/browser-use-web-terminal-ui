@@ -15,26 +15,14 @@ A streamlined browser automation tool that uses Google's Gemini AI to execute we
 - Persistent browser session between tasks
 - Multiple Gemini model support
 
-## Available Models
-
-The tool supports various Gemini models:
-1. Gemini 2.0 Flash Exp (Default)
-2. Gemini 2.0 Flash
-3. Gemini 1.5 Flash
-4. Gemini 1.5 Flash 8B
-5. Gemini 1.5 Pro
-6. Gemini 1.0 Pro
-7. Gemini 2.0 Flash Thinking Exp
-8. Gemini Exp 1206
-
-Each model has its own characteristics and capabilities. During setup, you'll be prompted to choose which model you want to use.
-
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone [your-repository-url]
-cd [repository-name]
+git clone https://github.com/kadavilrahul/browser-use-terminal-ui.git
+``` 
+```bash
+cd browser-use-terminal-ui
 ```
 
 2. Run the setup script:
@@ -71,6 +59,19 @@ Login to GitHub with username:xxx password:xxx and check notifications
 ```
 
 ## Switching Models
+
+The tool supports various Gemini models:
+1. Gemini 2.0 Flash Exp (Default)
+2. Gemini 2.0 Flash
+3. Gemini 1.5 Flash
+4. Gemini 1.5 Flash 8B
+5. Gemini 1.5 Pro
+6. Gemini 1.0 Pro
+7. Gemini 2.0 Flash Thinking Exp
+8. Gemini Exp 1206
+
+Each model has its own characteristics and capabilities. 
+During setup, you'll be prompted to choose which model you want to use.
 
 You can switch models in two ways:
 1. Using rerun.sh (Recommended):
