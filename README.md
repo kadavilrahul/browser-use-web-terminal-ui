@@ -30,27 +30,18 @@ cd browser-use-terminal-ui
 bash setup-debian.sh
 ```
 
-3. When prompted, select your preferred Gemini model (1-8)
+3. You'll need a Google Gemini API key:
+- Get your free API key from: https://aistudio.google.com/apikey
+- Enter it during setup or add it later to the `.env` file
 
-## Configuration
+4. When prompted, select your preferred Gemini model (1-8)
 
-You'll need a Google Gemini API key:
-1. Get your free API key from: https://aistudio.google.com/apikey
-2. Enter it during setup or add it later to the `.env` file
-
-## Usage
-
-1. Initial Setup and Run(This will install all dependencies and run your selected model):
-```bash
-bash setup-debian.sh
-```
-
-2. Subsequent Runs(Use this for all runs after the initial setup):
+5. Subsequent Runs(Use this for all runs after the initial setup):
 ```bash
 bash rerun.sh
 ```
 
-3. Example tasks:
+6. Example tasks:
 ```
 Go to wordpress order section of xxxx.com, ID:xxxx Password:xxxx and search for latest orders
 ```
