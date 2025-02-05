@@ -16,40 +16,23 @@ class GradioInterface:
         return [f"{id}. {model['name']} ({model['provider']})"
                 for id, model in self.llm_manager.MODELS.items()]
 
-    def check_api_key(self, model_id):
-        model_id = model_id.split('.')[0]
-        if model_id in self.llm_manager.MODELS:
-            key_env = self.llm_manager.MODELS[model_id]["key_env"]
-            return bool(os.getenv(key_env))
-        return False
-
-    def update_api_key(self, model_choice, api_key):
-        try:
-            model_id = model_choice.split('.')[0]
-            if model_id in self.llm_manager.MODELS:
-                model = self.llm_manager.MODELS[model_id]
-                set_key(self.dotenv_path, model["key_env"], api_key)
-                load_dotenv(self.dotenv_path)
-                return f"API key for {model['name']} updated successfully"
-            return "Invalid model selection"
-        except Exception as e:
-            return f"Error updating API key: {str(e)}"
-
-    async def run_task_async(self, model_choice, task):
+    async def run_task(self, model_choice, task, continue_task=False):
         try:
             model_id = model_choice.split('.')[0]
             if not model_id in self.llm_manager.MODELS:
-                return "Invalid model selection", "", None
+                return "Invalid model selection", "", None, gr.update(visible=False), gr.update(visible=False)
 
-            if not self.check_api_key(model_id):
-                return f"No API key set for {self.llm_manager.MODELS[model_id]['name']}", "", None
+            if not self.llm_manager.check_api_key(model_id):
+                return f"No API key set for {self.llm_manager.MODELS[model_id]['name']}", "", None, gr.update(visible=False), gr.update(visible=False)
 
             if not task.strip():
-                return "Task cannot be empty", "", None
+                return "Task cannot be empty", "", None, gr.update(visible=False), gr.update(visible=False)
 
+            # Create message and screenshot queues
             message_queue = asyncio.Queue()
             screenshot_queue = asyncio.Queue()
 
+            # Run task with queues
             await self.automation.run_task(
                 task,
                 model_id,
@@ -57,44 +40,52 @@ class GradioInterface:
                 screenshot_queue=screenshot_queue
             )
 
+            # Get messages and screenshots
             messages = []
             while not message_queue.empty():
                 messages.append(await message_queue.get())
 
             # Check for agent_history.gif in the project directory
             gif_path = os.path.join(os.getcwd(), "agent_history.gif")
-            if os.path.exists(gif_path):
-                return "Task completed successfully", "\n".join(messages), gif_path
-            return "Task completed successfully", "\n".join(messages), None
+            
+            # Show continue buttons after task completion
+            return ("Task completed successfully. Would you like to perform another task?", 
+                    "\n".join(messages), 
+                    gif_path if os.path.exists(gif_path) else None,
+                    gr.update(visible=True),  # Yes button
+                    gr.update(visible=True))  # No button
 
         except Exception as e:
-            return f"Error executing task: {str(e)}", "", None
+            return f"Error executing task: {str(e)}", "", None, gr.update(visible=False), gr.update(visible=False)
 
-    def run_task(self, model_choice, task):
-        return asyncio.run(self.run_task_async(model_choice, task))
+    async def cleanup_and_exit(self):
+        await self.automation.cleanup()
+        return ("Browser closed. You can start a new task.", 
+                "", 
+                None,
+                gr.update(visible=False),
+                gr.update(visible=False))
 
-def create_gradio_interface(llm_manager, browser_automation):
-    interface = GradioInterface(llm_manager, browser_automation)
-
-    with gr.Blocks(title="Browser Automation System") as demo:
-        gr.Markdown("# Browser Automation System")
-
-        with gr.Tab("Run Task"):
+    def create_interface(self):
+        with gr.Blocks() as interface:
             with gr.Row():
                 with gr.Column():
+                    model_choices = self.get_model_choices()
                     model_dropdown = gr.Dropdown(
-                        choices=interface.get_model_choices(),
-                        label="Select Model",
-                        info="Choose the LLM model to use"
+                        model_choices,
+                        label="Select AI Model",
+                        interactive=True
                     )
                     task_input = gr.Textbox(
-                        lines=3,
                         label="Task Description",
-                        placeholder="Enter your task here..."
+                        lines=3,
+                        placeholder="Enter your task here...",
+                        interactive=True
                     )
                     run_button = gr.Button("Run Task")
 
                 with gr.Column():
+                    output = gr.Textbox(label="Status", lines=2)
                     message_output = gr.Textbox(
                         label="Task Progress",
                         lines=10,
@@ -103,34 +94,31 @@ def create_gradio_interface(llm_manager, browser_automation):
                     screenshot_output = gr.Image(
                         label="Task Recording",
                         type="filepath",
-                        format="gif"  # Explicitly specify GIF format
+                        format="gif"
                     )
-                    output = gr.Textbox(label="Final Status", lines=2)
+                    
+                    with gr.Row():
+                        yes_button = gr.Button("Yes, New Task", visible=False)
+                        no_button = gr.Button("No, Close Browser", visible=False)
 
             run_button.click(
-                fn=interface.run_task,
+                fn=self.run_task,
                 inputs=[model_dropdown, task_input],
-                outputs=[output, message_output, screenshot_output]
+                outputs=[output, message_output, screenshot_output, yes_button, no_button]
             )
 
-        with gr.Tab("API Key Management"):
-            api_model_dropdown = gr.Dropdown(
-                choices=interface.get_model_choices(),
-                label="Select Model",
-                info="Choose the model to update API key"
-            )
-            api_key_input = gr.Textbox(
-                label="API Key",
-                type="password",
-                placeholder="Enter API key here"
-            )
-            update_button = gr.Button("Update API Key")
-            api_status = gr.Textbox(label="Status", lines=1)
-
-            update_button.click(
-                fn=interface.update_api_key,
-                inputs=[api_model_dropdown, api_key_input],
-                outputs=api_status
+            yes_button.click(
+                fn=lambda: ("Enter your next task", "", None, gr.update(visible=False), gr.update(visible=False)),
+                outputs=[output, message_output, screenshot_output, yes_button, no_button]
             )
 
-    return demo
+            no_button.click(
+                fn=self.cleanup_and_exit,
+                outputs=[output, message_output, screenshot_output, yes_button, no_button]
+            )
+
+        return interface
+
+def create_gradio_interface(llm_manager, browser_automation):
+    interface = GradioInterface(llm_manager, browser_automation)
+    return interface.create_interface()

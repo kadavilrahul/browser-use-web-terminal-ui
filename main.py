@@ -323,6 +323,20 @@ class LLMManager:
         else:
             print(f"ℹ️ No API key set for {model['name']}")
 
+    @classmethod
+    def check_api_key(cls, model_id: str) -> bool:
+        """Check if API key is set and valid for the given model"""
+        if model_id not in cls.MODELS:
+            return False
+        
+        config = cls.MODELS[model_id]
+        api_key = os.getenv(config["key_env"])
+        
+        if not api_key:
+            return False
+            
+        return cls._validate_key_format(config["provider"], api_key)
+
 class BrowserAutomation:
     def __init__(self):
         self.browser: Browser = None
