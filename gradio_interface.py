@@ -1,22 +1,23 @@
-# gradio_interface.py
-
 import os
 import asyncio
 import gradio as gr
 from dotenv import load_dotenv, set_key, find_dotenv
+import tempfile
+from pathlib import Path
 
 class GradioInterface:
     def __init__(self, llm_manager, browser_automation):
         self.llm_manager = llm_manager
         self.automation = browser_automation
         self.dotenv_path = find_dotenv()
+        self.temp_dir = Path(tempfile.mkdtemp())
 
     def get_model_choices(self):
         return [f"{id}. {model['name']} ({model['provider']})"
                 for id, model in self.llm_manager.MODELS.items()]
 
     def check_api_key(self, model_id):
-        model_id = model_id.split('.')[0]  # Extract the ID from the choice string
+        model_id = model_id.split('.')[0]
         if model_id in self.llm_manager.MODELS:
             key_env = self.llm_manager.MODELS[model_id]["key_env"]
             return bool(os.getenv(key_env))
@@ -38,18 +39,36 @@ class GradioInterface:
         try:
             model_id = model_choice.split('.')[0]
             if not model_id in self.llm_manager.MODELS:
-                return "Invalid model selection"
+                return "Invalid model selection", "", None
 
             if not self.check_api_key(model_id):
-                return f"No API key set for {self.llm_manager.MODELS[model_id]['name']}"
+                return f"No API key set for {self.llm_manager.MODELS[model_id]['name']}", "", None
 
             if not task.strip():
-                return "Task cannot be empty"
+                return "Task cannot be empty", "", None
 
-            await self.automation.run_task(task, model_id)
-            return "Task completed successfully"
+            message_queue = asyncio.Queue()
+            screenshot_queue = asyncio.Queue()
+
+            await self.automation.run_task(
+                task,
+                model_id,
+                message_queue=message_queue,
+                screenshot_queue=screenshot_queue
+            )
+
+            messages = []
+            while not message_queue.empty():
+                messages.append(await message_queue.get())
+
+            # Check for agent_history.gif in the project directory
+            gif_path = os.path.join(os.getcwd(), "agent_history.gif")
+            if os.path.exists(gif_path):
+                return "Task completed successfully", "\n".join(messages), gif_path
+            return "Task completed successfully", "\n".join(messages), None
+
         except Exception as e:
-            return f"Error executing task: {str(e)}"
+            return f"Error executing task: {str(e)}", "", None
 
     def run_task(self, model_choice, task):
         return asyncio.run(self.run_task_async(model_choice, task))
@@ -61,23 +80,37 @@ def create_gradio_interface(llm_manager, browser_automation):
         gr.Markdown("# Browser Automation System")
 
         with gr.Tab("Run Task"):
-            model_dropdown = gr.Dropdown(
-                choices=interface.get_model_choices(),
-                label="Select Model",
-                info="Choose the LLM model to use"
-            )
-            task_input = gr.Textbox(
-                lines=3,
-                label="Task Description",
-                placeholder="Enter your task here..."
-            )
-            run_button = gr.Button("Run Task")
-            output = gr.Textbox(label="Output", lines=3)
+            with gr.Row():
+                with gr.Column():
+                    model_dropdown = gr.Dropdown(
+                        choices=interface.get_model_choices(),
+                        label="Select Model",
+                        info="Choose the LLM model to use"
+                    )
+                    task_input = gr.Textbox(
+                        lines=3,
+                        label="Task Description",
+                        placeholder="Enter your task here..."
+                    )
+                    run_button = gr.Button("Run Task")
+
+                with gr.Column():
+                    message_output = gr.Textbox(
+                        label="Task Progress",
+                        lines=10,
+                        interactive=False
+                    )
+                    screenshot_output = gr.Image(
+                        label="Task Recording",
+                        type="filepath",
+                        format="gif"  # Explicitly specify GIF format
+                    )
+                    output = gr.Textbox(label="Final Status", lines=2)
 
             run_button.click(
                 fn=interface.run_task,
                 inputs=[model_dropdown, task_input],
-                outputs=output
+                outputs=[output, message_output, screenshot_output]
             )
 
         with gr.Tab("API Key Management"):

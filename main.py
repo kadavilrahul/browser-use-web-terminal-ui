@@ -1,6 +1,6 @@
 import os
 import asyncio
-from typing import Dict, Any, Optional # Import Optional
+from typing import Dict, Any, Optional
 from dotenv import load_dotenv, set_key, find_dotenv
 from browser_use import Agent, Controller
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 import logging
 import threading
 from gradio_interface import create_gradio_interface
-from filelock import FileLock # Import FileLock
+from filelock import FileLock
 from browser_use.browser import browser
 import pyperclip
 
@@ -43,7 +43,7 @@ BrowserContext = browser.BrowserContext
 class LLMManager:
     """Manages multiple LLM providers with API key verification and management"""
 
-    _env_lock = FileLock(".env.lock") # Initialize FileLock
+    _env_lock = FileLock(".env.lock")
 
     MODELS = {
         "1": {
@@ -94,7 +94,7 @@ class LLMManager:
         """Atomic environment updates with file locking"""
         with cls._env_lock:
             try:
-                set_key(dotenv_path, key_env, new_key.strip()) # Sanitize input key
+                set_key(dotenv_path, key_env, new_key.strip())
                 load_dotenv(dotenv_path, override=True)
                 return True
             except Exception as e:
@@ -107,7 +107,7 @@ class LLMManager:
         if old_key and cls._validate_key_format(cls._get_provider(key_env), old_key):
             await cls._update_env_safely(key_env, old_key)
         else:
-            await cls._update_env_safely(key_env, "") # Revert to empty if no valid old key
+            await cls._update_env_safely(key_env, "")
 
     @classmethod
     def _get_provider(cls, key_env: str) -> Optional[str]:
@@ -155,7 +155,6 @@ class LLMManager:
                 logger.error(f"Error initializing LLM for verification: {e}")
                 return False, f"❌ Error initializing LLM: {str(e)}"
 
-
             # Test prompt
             try:
                 messages = [{"role": "user", "content": "Respond with exactly 'OK' and nothing else"}]
@@ -188,7 +187,6 @@ class LLMManager:
         if not cls._validate_key_format(config["provider"], api_key):
             raise ValueError(f"Invalid {config['provider']} API key format")
 
-
         try:
             if config["provider"] == "Google":
                 return config["class"](
@@ -220,7 +218,7 @@ class LLMManager:
                 is_valid, message = await cls.verify_api_key(id)
                 model_statuses[id] = is_valid
                 if not is_valid:
-                    print(f"Warning: {model['name']} - {message}") # Detailed warning message
+                    print(f"Warning: {model['name']} - {message}")
             else:
                 model_statuses[id] = False
 
@@ -228,7 +226,7 @@ class LLMManager:
         print("----")
         for id, model in cls.MODELS.items():
             key_status = "✅" if model_statuses[id] else "❌"
-            status_display = key_status if model_statuses[id] else "❌ (Key Missing/Invalid)" # More informative status
+            status_display = key_status if model_statuses[id] else "❌ (Key Missing/Invalid)"
             print(f"{id}. {model['name']} ({model['provider']}) {status_display}")
 
         return model_statuses
@@ -277,7 +275,6 @@ class LLMManager:
                 return
 
             try:
-                # Store current key as backup before update
                 current_key_backup = current_key
 
                 if await cls._update_env_safely(model["key_env"], new_key):
@@ -287,7 +284,7 @@ class LLMManager:
 
                     if not is_valid:
                         print(f"⚠️ Verification failed. Reverting to previous API key for {model['name']}.")
-                        await cls._revert_key_safely(model["key_env"], current_key_backup) # Revert to backup
+                        await cls._revert_key_safely(model["key_env"], current_key_backup)
                     else:
                         print(f"✅ API key for {model['name']} updated and verified successfully.")
                 else:
@@ -314,7 +311,7 @@ class LLMManager:
             confirm_remove = input(f"⚠️ Are you sure you want to remove the API key for {model['name']}? (yes/no): ").strip().lower()
             if confirm_remove == 'yes':
                 try:
-                    if await cls._update_env_safely(model["key_env"], ""): # Set to empty string to remove
+                    if await cls._update_env_safely(model["key_env"], ""):
                         print(f"\n✅ API key for {model['name']} removed successfully.")
                     else:
                         print(f"❌ Failed to remove API key for {model['name']}.")
@@ -326,31 +323,15 @@ class LLMManager:
         else:
             print(f"ℹ️ No API key set for {model['name']}")
 
-
 class BrowserAutomation:
     def __init__(self):
         self.browser: Browser = None
         self.context: BrowserContext = None
         self._init_lock = threading.Lock()
-        self.controller = Controller()
-
-        # Register clipboard actions
-        @self.controller.registry.action('Copy text to clipboard')
-        def copy_to_clipboard(text: str):
-            pyperclip.copy(text)
-            return ActionResult(extracted_content=text)
-
-        @self.controller.registry.action('Paste text from clipboard')
-        async def paste_from_clipboard(browser: BrowserContext):
-            text = pyperclip.paste()
-            page = await browser.get_current_page()
-            await page.keyboard.type(text)
-            return ActionResult(extracted_content=text)
 
     async def initialize(self):
-        """Initialize browser and context with thread lock to prevent race conditions"""
         with self._init_lock:
-            if self.browser and self.context: # Check if already initialized
+            if self.browser and self.context:
                 return
 
             try:
@@ -364,7 +345,6 @@ class BrowserAutomation:
                 raise
 
     async def cleanup(self):
-        """Clean up browser resources safely"""
         try:
             if self.context:
                 await self.context.close()
@@ -376,23 +356,31 @@ class BrowserAutomation:
         except Exception as e:
             logger.error(f"Error during browser cleanup: {str(e)}")
 
-    async def run_task(self, task: str, model_id: str):
+    async def run_task(self, task: str, model_id: str, message_queue: asyncio.Queue = None, screenshot_queue: asyncio.Queue = None):
         """Execute a browser automation task"""
         try:
             await self.initialize()
-
             llm = LLMManager.get_llm(model_id)
 
+            # Create the agent without the on_action parameter
             agent = Agent(
                 task=task,
                 llm=llm,
                 browser=self.browser,
-                browser_context=self.context,
-                controller=self.controller  # Add controller to agent initialization
+                browser_context=self.context
             )
 
             logger.info(f"Starting task execution with {LLMManager.MODELS[model_id]['name']}")
             await agent.run()
+
+            if message_queue:
+                await message_queue.put(f"Task executed successfully")
+
+            # Check for agent_history.gif and send it to the screenshot queue
+            gif_path = os.path.join(os.getcwd(), "agent_history.gif")
+            if os.path.exists(gif_path) and screenshot_queue:
+                await screenshot_queue.put(gif_path)
+
             logger.info("Task completed successfully")
 
         except Exception as e:
@@ -414,14 +402,14 @@ async def main_menu():
             choice = input("\nSelect action (1-3): ").strip()
 
             if choice == "1":
-                model_statuses = await LLMManager.list_models() # Get model statuses
+                model_statuses = await LLMManager.list_models()
                 model_id = input("\nSelect AI model number (1-3): ").strip()
 
                 if model_id not in LLMManager.MODELS:
                     print("\n❌ Invalid model selection. Please try again.")
                     continue
 
-                if not model_statuses.get(model_id, False): # Check if key is valid from status
+                if not model_statuses.get(model_id, False):
                     print(f"\n❌ Invalid or missing API key for {LLMManager.MODELS[model_id]['name']}")
                     print("Please set up your API key first using option 2")
                     continue
@@ -436,30 +424,45 @@ async def main_menu():
                     print("\n❌ Task cannot be empty")
                     continue
 
-                while True: # Loop for task continuation
+                while True:
                     try:
                         print("\nExecuting task...")
-                        await automation.run_task(task, model_id)
+                        message_queue = asyncio.Queue()
+                        screenshot_queue = asyncio.Queue()
+
+                        await automation.run_task(
+                            task,
+                            model_id,
+                            message_queue=message_queue,
+                            screenshot_queue=screenshot_queue
+                        )
+
+                        messages = []
+                        while not message_queue.empty():
+                            messages.append(await message_queue.get())
+
+                        latest_screenshot = None
+                        while not screenshot_queue.empty():
+                            latest_screenshot = await screenshot_queue.get()
+
                         print("\n✅ Task completed successfully")
+                        print("\n".join(messages))
 
                         another_task = input("Perform another task? (y/n): ").strip().lower()
                         if another_task == 'n':
-                            break # Exit inner loop, back to main menu
+                            break
                         elif another_task == 'y':
-                            task = input("\nEnter your next task: ").strip() # Ask for next task
+                            task = input("\nEnter your next task: ").strip()
                             if not task:
                                 print("\n❌ Task cannot be empty")
-                                continue # Continue inner loop to ask for task again
+                                continue
                         else:
                             print("\n❌ Invalid input. Please enter 'y' or 'n'.")
-                            continue # Continue inner loop to ask y/n again
+                            continue
 
                     except Exception as e:
                         print(f"\n❌ Error executing task: {str(e)}")
-                        break # Exit inner loop on error
-
-                if another_task == 'n': # Check if user chose 'n' to break outer loop as well if needed. In this case, no need as break in inner loop goes to main menu options.
-                    pass # No action needed, will go back to main menu options
+                        break
 
             elif choice == "2":
                 await LLMManager.manage_api_keys()
