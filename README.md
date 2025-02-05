@@ -60,16 +60,16 @@ Login to GitHub with username:xxx password:xxx and check notifications
 - `.gitignore`: Git ignore rules
 - `README.md`: This documentation file
 
-## The run.sh script will:
+## The run.sh script will
 - Check and activate virtual environment
 - Verify environment setup
 - Start the application automatically
 
 # The setup-debian.sh script will:
-# - Create Python virtual environment
-# - Install all required packages
-# - Set up API key configuration
-# - Install browser dependencies
+- Create Python virtual environment
+- Install all required packages
+- Set up API key configuration
+- Install browser dependencies
 
 # You'll need API keys:
 - Google Gemini API key: https://aistudio.google.com/apikey
