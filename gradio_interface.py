@@ -60,7 +60,9 @@ class GradioInterface:
 
     async def cleanup_and_exit(self):
         await self.automation.cleanup()
-        return ("Browser closed. You can start a new task.", 
+        # Exit the entire process
+        os._exit(0)
+        return ("Browser closed. Exiting...", 
                 "", 
                 None,
                 gr.update(visible=False),
@@ -82,7 +84,11 @@ class GradioInterface:
                         placeholder="Enter your task here...",
                         interactive=True
                     )
-                    run_button = gr.Button("Run Task")
+                    with gr.Row():
+                        run_button = gr.Button("Run Task")
+                    with gr.Row():
+                        yes_button = gr.Button("Yes, New Task", visible=False)
+                        no_button = gr.Button("No, Close Browser", visible=False)
 
                 with gr.Column():
                     output = gr.Textbox(label="Status", lines=2)
@@ -96,10 +102,6 @@ class GradioInterface:
                         type="filepath",
                         format="gif"
                     )
-                    
-                    with gr.Row():
-                        yes_button = gr.Button("Yes, New Task", visible=False)
-                        no_button = gr.Button("No, Close Browser", visible=False)
 
             run_button.click(
                 fn=self.run_task,
