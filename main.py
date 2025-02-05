@@ -2,8 +2,7 @@ import os
 import asyncio
 from typing import Dict, Any, Optional # Import Optional
 from dotenv import load_dotenv, set_key, find_dotenv
-from browser_use import Agent
-from browser_use.browser import browser
+from browser_use import Agent, Controller
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
@@ -11,6 +10,8 @@ import logging
 import threading
 from gradio_interface import create_gradio_interface
 from filelock import FileLock # Import FileLock
+from browser_use.browser import browser
+import pyperclip
 
 # Enhanced logging configuration
 logging.basicConfig(
@@ -330,7 +331,21 @@ class BrowserAutomation:
     def __init__(self):
         self.browser: Browser = None
         self.context: BrowserContext = None
-        self._init_lock = threading.Lock() # Lock for browser initialization
+        self._init_lock = threading.Lock()
+        self.controller = Controller()
+
+        # Register clipboard actions
+        @self.controller.registry.action('Copy text to clipboard')
+        def copy_to_clipboard(text: str):
+            pyperclip.copy(text)
+            return ActionResult(extracted_content=text)
+
+        @self.controller.registry.action('Paste text from clipboard')
+        async def paste_from_clipboard(browser: BrowserContext):
+            text = pyperclip.paste()
+            page = await browser.get_current_page()
+            await page.keyboard.type(text)
+            return ActionResult(extracted_content=text)
 
     async def initialize(self):
         """Initialize browser and context with thread lock to prevent race conditions"""
@@ -364,7 +379,7 @@ class BrowserAutomation:
     async def run_task(self, task: str, model_id: str):
         """Execute a browser automation task"""
         try:
-            await self.initialize() # Ensure browser is initialized
+            await self.initialize()
 
             llm = LLMManager.get_llm(model_id)
 
@@ -372,7 +387,8 @@ class BrowserAutomation:
                 task=task,
                 llm=llm,
                 browser=self.browser,
-                browser_context=self.context
+                browser_context=self.context,
+                controller=self.controller  # Add controller to agent initialization
             )
 
             logger.info(f"Starting task execution with {LLMManager.MODELS[model_id]['name']}")
