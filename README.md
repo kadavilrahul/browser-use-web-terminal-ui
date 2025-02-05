@@ -1,28 +1,25 @@
 # Browser Automation with Gemini AI
 
-A streamlined browser automation tool that uses Google's Gemini AI to execute web-based tasks through natural language commands.
+- A minimal browser automation setup that integrates AI model
+- It takes user input and executes tasks on a Chromium browser
+- Built using Windsurf Code editor and Claude 3.5 Sonnet model
+- This is simplified and modified version of the original code: https://github.com/browser-use/browser-use
+
+## Modifications and improvement done
+- The tool will be ready to use by running two commands on terminal
+- Made it user friendly by adding user inputs on terminal for all the tasks
+- Use of terminal and web interface for input and output
 
 ## System Requirements
 - Ubuntu Linux with GUI (GUI needed for browser access)
 - Python 3.x
 - Internet connection
 
-## Features
-- Natural language task execution
-- Automated browser control
-- API key management
-- Task recording (saves as GIF)
-- Persistent browser session between tasks
-- Multiple Gemini model support
-
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/kadavilrahul/browser-use-terminal-ui.git
-``` 
-```bash
-cd browser-use-terminal-ui
+git clone https://github.com/kadavilrahul/browser-use-web-terminal-ui.git && cd browser-use-web-terminal-ui
 ```
 
 2. Run the setup script:
@@ -30,18 +27,19 @@ cd browser-use-terminal-ui
 bash setup-debian.sh
 ```
 
-3. You'll need a Google Gemini API key:
-- Get your free API key from: https://aistudio.google.com/apikey
-- Enter it during setup or add it later to the `.env` file
+3. Start the application (make sure your are in right folder in terminal):
 
-4. When prompted, select your preferred Gemini model (1-8)
-
-5. Subsequent Runs(Use this for all runs after the initial setup):
+Using rerun script (recommended):
 ```bash
-bash rerun.sh
+bash run.sh
 ```
 
-6. Example tasks:
+Manual start If port is blocked:
+```bash
+kill -9 $(lsof -t -i :7860) 2>/dev/null; python3 main.py
+```
+
+4. Example tasks:
 ```
 Go to wordpress order section of xxxx.com, ID:xxxx Password:xxxx and search for latest orders
 ```
@@ -49,55 +47,34 @@ Go to wordpress order section of xxxx.com, ID:xxxx Password:xxxx and search for 
 Login to GitHub with username:xxx password:xxx and check notifications
 ```
 
-## Switching Models
-
-The tool supports various Gemini models:
-1. Gemini 2.0 Flash Exp (Default)
-2. Gemini 2.0 Flash
-3. Gemini 1.5 Flash
-4. Gemini 1.5 Flash 8B
-5. Gemini 1.5 Pro
-6. Gemini 1.0 Pro
-7. Gemini 2.0 Flash Thinking Exp
-8. Gemini Exp 1206
-
-Each model has its own characteristics and capabilities. 
-During setup, you'll be prompted to choose which model you want to use.
-
-You can switch models in two ways:
-1. Using rerun.sh (Recommended):
-```bash
-bash rerun.sh
-```
-Then select your desired model number when prompted.
-
-2. Using setup-debian.sh (Full reinstall):
-```bash
-bash setup-debian.sh
-```
-Use this only if you need to reinstall dependencies or reconfigure your setup.
-
 ## Files
 
 ### Main Files
+- `main.py`: Main application script
 - `setup-debian.sh`: Script for installing dependencies and first-time configuration
-- `rerun.sh`: Script for running models after initial setup
 - `requirements.txt`: Python package dependencies
-
-### Model Files
-- `main-gemini-2.0-flash-exp.py`: Default Gemini 2.0 Flash Experimental model
-- `gemini-2.0-flash.py`: Gemini 2.0 Flash model
-- `gemini-1.5-flash.py`: Gemini 1.5 Flash model
-- `gemini-1.5-flash-8b.py`: Gemini 1.5 Flash 8B model
-- `gemini-1.5-pro.py`: Gemini 1.5 Pro model
-- `gemini-1.0-pro.py`: Gemini 1.0 Pro model
-- `gemini-2.0-flash-thinking-exp-01-21.py`: Gemini 2.0 Flash Thinking Experimental model
-- `gemini-exp-1206.py`: Gemini Experimental 1206 model
 
 ### Configuration Files
 - `.env`: Environment file for storing API keys and configuration
 - `.gitignore`: Git ignore rules
 - `README.md`: This documentation file
+
+## The run.sh script will:
+- Check and activate virtual environment
+- Verify environment setup
+- Start the application automatically
+
+# The setup-debian.sh script will:
+# - Create Python virtual environment
+# - Install all required packages
+# - Set up API key configuration
+# - Install browser dependencies
+
+# You'll need API keys:
+- Google Gemini API key: https://aistudio.google.com/apikey
+- Anthropic Claude API key: https://www.anthropic.com/api
+- OpenAI API key: https://platform.openai.com/api-keys
+Enter them during setup or add them later to the `.env` file
 
 ## Troubleshooting
 
@@ -125,3 +102,7 @@ Task executions are automatically recorded and saved as `agent_history.gif` in t
 - Use 'exit' command to properly close the browser
 
 For any issues or contributions, please open an issue in the repository.
+
+Note:
+1. This version has web UI with gradio
+2. main.py is running well with gradio

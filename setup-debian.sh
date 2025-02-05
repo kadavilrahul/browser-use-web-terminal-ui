@@ -32,58 +32,51 @@ echo "Installing Playwright and browsers..."
 python3 -m playwright install
 python3 -m playwright install-deps
 
-# 6. Create .env file
-echo "Setting up environment file..."
-echo "# API Keys Configuration" > .env
+# 6. Create .env file and .gitignore
+echo "Setting up environment files..."
+echo "# API Keys Configuration" > .env.example
+echo "GOOGLE_API_KEY=your_google_api_key_here" >> .env.example
+echo "ANTHROPIC_API_KEY=your_anthropic_api_key_here" >> .env.example
+echo "OPENAI_API_KEY=your_openai_api_key_here" >> .env.example
 
-# 7. Collect API key
-echo "Please enter your API key."
-echo "Google API Key (for Gemini model) - Get it from https://aistudio.google.com/"
-read -p "Enter GOOGLE_API_KEY: " api_key
+# Create .env file
+cp .env.example .env
 
-if [ -n "$api_key" ]; then
-    echo "GOOGLE_API_KEY=$api_key" >> .env
-    echo "API key has been saved to .env file"
+# Add .env to .gitignore
+if [ ! -f ".gitignore" ]; then
+    touch .gitignore
+fi
+if ! grep -q "^.env$" .gitignore; then
+    echo ".env" >> .gitignore
+fi
+
+# 7. Collect API keys
+echo -e "\nAPI Key Setup"
+echo "You can get API keys from:"
+echo "- Google API Key (Gemini): https://aistudio.google.com/"
+echo "- Anthropic API Key (Claude): https://www.anthropic.com/api"
+echo "- OpenAI API Key (GPT-4): https://platform.openai.com/api-keys"
+
+read -p "Would you like to enter API keys now? (y/n): " setup_keys
+
+if [ "$setup_keys" = "y" ]; then
+    read -p "Enter GOOGLE_API_KEY (press Enter to skip): " google_key
+    read -p "Enter ANTHROPIC_API_KEY (press Enter to skip): " anthropic_key
+    read -p "Enter OPENAI_API_KEY (press Enter to skip): " openai_key
+
+    if [ -n "$google_key" ]; then
+        sed -i "s/^GOOGLE_API_KEY=.*$/GOOGLE_API_KEY=$google_key/" .env
+    fi
+    if [ -n "$anthropic_key" ]; then
+        sed -i "s/^ANTHROPIC_API_KEY=.*$/ANTHROPIC_API_KEY=$anthropic_key/" .env
+    fi
+    if [ -n "$openai_key" ]; then
+        sed -i "s/^OPENAI_API_KEY=.*$/OPENAI_API_KEY=$openai_key/" .env
+    fi
+    echo "API keys have been saved to .env file"
 else
-    echo "No API key provided. You can add it later by editing .env file"
+    echo "You can set up API keys later by editing the .env file"
 fi
-
-# 8. Display model selection menu
-echo -e "\nAvailable Models:"
-echo "1. Gemini 2.0 Flash Exp (main-gemini-2.0-flash-exp.py)"
-echo "2. Gemini 2.0 Flash (gemini-2.0-flash.py)"
-echo "3. Gemini 1.5 Flash (gemini-1.5-flash.py)"
-echo "4. Gemini 1.5 Flash 8B (gemini-1.5-flash-8b.py)"
-echo "5. Gemini 1.5 Pro (gemini-1.5-pro.py)"
-echo "6. Gemini 1.0 Pro (gemini-1.0-pro.py)"
-echo "7. Gemini 2.0 Flash Thinking Exp (gemini-2.0-flash-thinking-exp-01-21.py)"
-echo "8. Gemini Exp 1206 (gemini-exp-1206.py)"
-
-while true; do
-    read -p "Select a model (1-8): " model_choice
-    case $model_choice in
-        1) model_file="main-gemini-2.0-flash-exp.py" ; break ;;
-        2) model_file="gemini-2.0-flash.py" ; break ;;
-        3) model_file="gemini-1.5-flash.py" ; break ;;
-        4) model_file="gemini-1.5-flash-8b.py" ; break ;;
-        5) model_file="gemini-1.5-pro.py" ; break ;;
-        6) model_file="gemini-1.0-pro.py" ; break ;;
-        7) model_file="gemini-2.0-flash-thinking-exp-01-21.py" ; break ;;
-        8) model_file="gemini-exp-1206.py" ; break ;;
-        *) echo "Invalid choice. Please select a number between 1 and 8." ;;
-    esac
-done
-
-# 9. Verify the selected model file exists
-echo "Checking for the selected model script..."
-if [ ! -f "$model_file" ]; then
-    echo "Error: $model_file not found!"
-    exit 1
-fi
-
-# 10. Make the script executable
-chmod +x "$model_file"
 
 echo "Setup completed successfully!"
-echo "Starting the browser automation tool with $model_file..."
-python3 "$model_file"
+echo "To start the application, run: bash run.sh"
