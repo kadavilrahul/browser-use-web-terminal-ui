@@ -3,7 +3,10 @@
 - A minimal browser automation setup that integrates AI models
 - It takes user input and executes tasks on a Chromium browser
 - User can input tasks via terminal or Gradio web interface
-- This is simplified and modified version of the original code: https://github.com/browser-use/browser-use
+- Repeat tasks can be entered in alredy open browser session
+- New tasks have have context of previous task
+
+Note: This is simplified and modified version of the original code: https://github.com/browser-use/browser-use
 
 ## Modifications and improvement done
 - The tool will be ready to use by running three commands on terminal

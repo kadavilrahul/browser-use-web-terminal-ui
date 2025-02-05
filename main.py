@@ -323,6 +323,20 @@ class LLMManager:
         else:
             print(f"ℹ️ No API key set for {model['name']}")
 
+    @classmethod
+    def check_api_key(cls, model_id: str) -> bool:
+        """Check if API key is set and valid for the given model"""
+        if model_id not in cls.MODELS:
+            return False
+        
+        config = cls.MODELS[model_id]
+        api_key = os.getenv(config["key_env"])
+        
+        if not api_key:
+            return False
+            
+        return cls._validate_key_format(config["provider"], api_key)
+
 class BrowserAutomation:
     def __init__(self):
         self.browser: Browser = None
@@ -362,7 +376,7 @@ class BrowserAutomation:
             await self.initialize()
             llm = LLMManager.get_llm(model_id)
 
-            # Create the agent without the on_action parameter
+            # Create the agent
             agent = Agent(
                 task=task,
                 llm=llm,
@@ -419,17 +433,23 @@ async def main_menu():
                 print("- Go to wordpress order section of website.com, login with ID:xxx Password:xxx")
                 print("- Login to GitHub with username:xxx password:xxx and check notifications")
 
-                task = input("\nEnter your task: ").strip()
-                if not task:
-                    print("\n❌ Task cannot be empty")
-                    continue
-
                 while True:
+                    task = input("\nEnter your task (or type 'exit' to go back to the main menu): ").strip()
+                    if task.lower() == "exit":
+                        print("\nReturning to the main menu...")
+                        break
+
+                    if not task:
+                        print("\n❌ Task cannot be empty")
+                        continue
+
                     try:
                         print("\nExecuting task...")
+                        # Create message and screenshot queues
                         message_queue = asyncio.Queue()
                         screenshot_queue = asyncio.Queue()
 
+                        # Run task with queues
                         await automation.run_task(
                             task,
                             model_id,
@@ -437,6 +457,7 @@ async def main_menu():
                             screenshot_queue=screenshot_queue
                         )
 
+                        # Get messages and screenshots
                         messages = []
                         while not message_queue.empty():
                             messages.append(await message_queue.get())
@@ -448,17 +469,14 @@ async def main_menu():
                         print("\n✅ Task completed successfully")
                         print("\n".join(messages))
 
-                        another_task = input("Perform another task? (y/n): ").strip().lower()
+                        # Ask if the user wants to perform another task
+                        another_task = input("\nDo you want to perform another task? (y/n): ").strip().lower()
                         if another_task == 'n':
+                            print("\nReturning to the main menu...")
                             break
-                        elif another_task == 'y':
-                            task = input("\nEnter your next task: ").strip()
-                            if not task:
-                                print("\n❌ Task cannot be empty")
-                                continue
-                        else:
-                            print("\n❌ Invalid input. Please enter 'y' or 'n'.")
-                            continue
+                        elif another_task != 'y':
+                            print("\n❌ Invalid input. Returning to the main menu...")
+                            break
 
                     except Exception as e:
                         print(f"\n❌ Error executing task: {str(e)}")
