@@ -34,9 +34,9 @@ Using rerun script (recommended):
 bash run.sh
 ```
 
-Manual start If port is blocked:
+Rerun script If port is blocked:
 ```bash
-kill -9 $(lsof -t -i :7860) 2>/dev/null; python3 main.py
+bash rerun.sh
 ```
 
 4. Example tasks:

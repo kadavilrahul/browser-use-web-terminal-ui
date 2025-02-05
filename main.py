@@ -33,7 +33,7 @@ class LLMManager:
         "1": {
             "name": "Gemini",
             "provider": "Google",
-            "model": "gemini-2.0-flash-exp",
+            "model": "gemini-2.0-flash-exp",  # Changed to correct model name
             "key_env": "GOOGLE_API_KEY",
             "class": ChatGoogleGenerativeAI
         },
@@ -52,6 +52,48 @@ class LLMManager:
             "class": ChatOpenAI
         }
     }
+
+    @classmethod
+    async def verify_api_key(cls, model_id: str) -> tuple[bool, str]:
+        """Verify API key with a test prompt"""
+        try:
+            config = cls.MODELS[model_id]
+            api_key = os.getenv(config["key_env"])
+
+            if not api_key:
+                return False, "No API key found"
+
+            # Initialize LLM
+            llm = None
+            if config["provider"] == "Google":
+                llm = config["class"](
+                    google_api_key=api_key,
+                    model=config["model"],
+                    temperature=0
+                )
+            elif config["provider"] == "Anthropic":
+                llm = config["class"](
+                    anthropic_api_key=api_key,
+                    model=config["model"],
+                    temperature=0
+                )
+            else:  # OpenAI
+                llm = config["class"](
+                    api_key=api_key,
+                    model=config["model"],
+                    temperature=0
+                )
+
+            # Test prompt
+            messages = [{"role": "user", "content": "Respond with exactly 'OK' and nothing else"}]
+            response = await llm.ainvoke(messages)
+
+            if "OK" in str(response.content):
+                return True, "✅ API key verified successfully"
+            return False, "❌ API key verification failed"
+
+        except Exception as e:
+            return False, f"❌ API key verification failed: {str(e)}"
 
     @classmethod
     def get_llm(cls, model_id: str):
@@ -86,21 +128,35 @@ class LLMManager:
             raise
 
     @classmethod
-    def list_models(cls):
+    async def list_models(cls):
         """Display available models and their status"""
-        print("\nAvailable Models:")
-        print("================")
+        print("\nVerifying API keys...")
+        model_statuses = {}
+
         for id, model in cls.MODELS.items():
-            key_status = "✅" if os.getenv(model["key_env"]) else "❌"
+            if os.getenv(model["key_env"]):
+                is_valid, message = await cls.verify_api_key(id)
+                model_statuses[id] = is_valid
+                if not is_valid:
+                    print(f"Warning: {model['name']} - {message}")
+            else:
+                model_statuses[id] = False
+
+        print("\nAvailable AI Models:")
+        print("--------------------")
+        for id, model in cls.MODELS.items():
+            key_status = "✅" if model_statuses[id] else "❌"
             print(f"{id}. {model['name']} ({model['provider']}) {key_status}")
 
+        return model_statuses
+
     @classmethod
-    def manage_api_keys(cls):
+    async def manage_api_keys(cls):
         """Manage API keys for all models"""
         while True:
             print("\nAPI Key Management")
-            print("=================")
-            cls.list_models()
+            print("--------------------")
+            await cls.list_models()
             print("\nOptions:")
             print("1. Add/Update API Key")
             print("2. Remove API Key")
@@ -109,22 +165,22 @@ class LLMManager:
             choice = input("\nSelect an option (1-3): ").strip()
 
             if choice == "1":
-                cls.add_update_api_key()
+                await cls.add_update_api_key()
             elif choice == "2":
-                cls.remove_api_key()
+                await cls.remove_api_key()
             elif choice == "3":
                 break
             else:
-                print("Invalid choice")
+                print("❌ Invalid choice")
 
     @classmethod
-    def add_update_api_key(cls):
+    async def add_update_api_key(cls):
         """Add or update an API key"""
-        cls.list_models()
+        model_statuses = await cls.list_models()
         model_id = input("\nSelect model number to add/update API key: ").strip()
 
         if model_id not in cls.MODELS:
-            print("Invalid model selection")
+            print("❌ Invalid model selection")
             return
 
         model = cls.MODELS[model_id]
@@ -137,20 +193,29 @@ class LLMManager:
             try:
                 set_key(dotenv_path, model["key_env"], new_key)
                 load_dotenv(dotenv_path)
-                print(f"\nAPI key for {model['name']} updated successfully")
+                print(f"\nTesting API key for {model['name']}...")
+                is_valid, message = await cls.verify_api_key(model_id)
+                print(message)
+                if not is_valid:
+                    # Revert the key if verification fails
+                    if current_key:
+                        set_key(dotenv_path, model["key_env"], current_key)
+                    else:
+                        set_key(dotenv_path, model["key_env"], "")
+                    load_dotenv(dotenv_path)
             except Exception as e:
-                print(f"Error updating API key: {str(e)}")
+                print(f"❌ Error updating API key: {str(e)}")
         else:
-            print("No changes made")
+            print("ℹ️ No changes made")
 
     @classmethod
-    def remove_api_key(cls):
+    async def remove_api_key(cls):
         """Remove an API key"""
-        cls.list_models()
+        await cls.list_models()
         model_id = input("\nSelect model number to remove API key: ").strip()
 
         if model_id not in cls.MODELS:
-            print("Invalid model selection")
+            print("❌ Invalid model selection")
             return
 
         model = cls.MODELS[model_id]
@@ -158,11 +223,11 @@ class LLMManager:
             try:
                 set_key(dotenv_path, model["key_env"], "")
                 load_dotenv(dotenv_path)
-                print(f"\nAPI key for {model['name']} removed successfully")
+                print(f"\n✅ API key for {model['name']} removed successfully")
             except Exception as e:
-                print(f"Error removing API key: {str(e)}")
+                print(f"❌ Error removing API key: {str(e)}")
         else:
-            print(f"No API key set for {model['name']}")
+            print(f"ℹ️ No API key set for {model['name']}")
 
 class BrowserAutomation:
     def __init__(self):
@@ -197,7 +262,10 @@ class BrowserAutomation:
     async def run_task(self, task: str, model_id: str):
         """Execute a browser automation task"""
         try:
-            await self.initialize()
+            # Only initialize if browser is not already running
+            if not self.browser or not self.context:
+                await self.initialize()
+
             llm = LLMManager.get_llm(model_id)
 
             agent = Agent(
@@ -214,8 +282,6 @@ class BrowserAutomation:
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
             raise
-        finally:
-            await self.cleanup()
 
 async def main_menu():
     """Main program loop"""
@@ -223,56 +289,61 @@ async def main_menu():
 
     try:
         while True:
-            print("\nBrowser Automation Menu")
-            print("=====================")
-            print("1. Run Task")
-            print("2. List Models")
-            print("3. Manage API Keys")
-            print("4. Exit")
+            print("\n=== Browser Automation System ===")
+            print("\nAvailable Actions:")
+            print("1. Execute Browser Task")
+            print("2. Manage API Keys")
+            print("3. Exit")
 
-            choice = input("\nSelect an option (1-4): ").strip()
+            choice = input("\nSelect action (1-3): ").strip()
 
             if choice == "1":
-                LLMManager.list_models()
-                model_id = input("\nSelect model number: ").strip()
+                # Display models with verified status
+                model_statuses = await LLMManager.list_models()
+                model_id = input("\nSelect AI model number (1-3): ").strip()
 
                 if model_id not in LLMManager.MODELS:
-                    print("Invalid model selection")
+                    print("\n❌ Invalid model selection. Please try again.")
                     continue
 
-                if not os.getenv(LLMManager.MODELS[model_id]["key_env"]):
-                    print(f"\nNo API key set for {LLMManager.MODELS[model_id]['name']}.")
-                    print("Please set the API key first using the 'Manage API Keys' option.")
+                if not model_statuses[model_id]:
+                    print(f"\n❌ Invalid or missing API key for {LLMManager.MODELS[model_id]['name']}")
+                    print("Please set up your API key first using option 2")
                     continue
+
+                print(f"\nUsing {LLMManager.MODELS[model_id]['name']} for task execution")
+                print("\nExample tasks:")
+                print("- Go to wordpress order section of website.com, login with ID:xxx Password:xxx")
+                print("- Login to GitHub with username:xxx password:xxx and check notifications")
 
                 task = input("\nEnter your task: ").strip()
                 if not task:
-                    print("Task cannot be empty")
+                    print("\n❌ Task cannot be empty")
                     continue
 
                 try:
+                    print("\nExecuting task...")
                     await automation.run_task(task, model_id)
+                    print("\n✅ Task completed successfully")
                 except Exception as e:
-                    print(f"Error executing task: {str(e)}")
+                    print(f"\n❌ Error executing task: {str(e)}")
 
             elif choice == "2":
-                LLMManager.list_models()
+                await LLMManager.manage_api_keys()
 
             elif choice == "3":
-                LLMManager.manage_api_keys()
-
-            elif choice == "4":
-                print("Exiting program...")
+                print("\nExiting program...")
+                await automation.cleanup()
                 break
 
             else:
-                print("Invalid choice. Please select 1-4.")
+                print("\n❌ Invalid choice. Please select 1-3.")
 
     except KeyboardInterrupt:
-        print("\nProgram interrupted by user")
+        print("\n\nProgram interrupted by user")
+        await automation.cleanup()
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
-    finally:
         await automation.cleanup()
 
 def main():

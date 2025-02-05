@@ -17,3 +17,6 @@ venv/
 
 # Misc
 *.log
+
+# Generated files
+*.gif
