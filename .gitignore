@@ -21,3 +21,6 @@ venv/
 
 # Generated files
 *.gif
+
+# Log files
+*.json
