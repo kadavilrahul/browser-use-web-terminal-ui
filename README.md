@@ -1,12 +1,12 @@
 # Browser Automation with Gemini AI
 
-- A minimal browser automation setup that integrates AI model
+- A minimal browser automation setup that integrates AI models
 - It takes user input and executes tasks on a Chromium browser
-- Built using Windsurf Code editor and Claude 3.5 Sonnet model
+- User can input tasks via terminal or Gradio web interface
 - This is simplified and modified version of the original code: https://github.com/browser-use/browser-use
 
 ## Modifications and improvement done
-- The tool will be ready to use by running two commands on terminal
+- The tool will be ready to use by running three commands on terminal
 - Made it user friendly by adding user inputs on terminal for all the tasks
 - Use of terminal and web interface for input and output
 
@@ -14,6 +14,7 @@
 - Ubuntu Linux with GUI (GUI needed for browser access)
 - Python 3.x
 - Internet connection
+- Tested on Linux Ubuntu 24.04
 
 ## Installation
 
@@ -59,16 +60,16 @@ Login to GitHub with username:xxx password:xxx and check notifications
 - `.gitignore`: Git ignore rules
 - `README.md`: This documentation file
 
-## The run.sh script will:
+## The run.sh script will
 - Check and activate virtual environment
 - Verify environment setup
 - Start the application automatically
 
 # The setup-debian.sh script will:
-# - Create Python virtual environment
-# - Install all required packages
-# - Set up API key configuration
-# - Install browser dependencies
+- Create Python virtual environment
+- Install all required packages
+- Set up API key configuration
+- Install browser dependencies
 
 # You'll need API keys:
 - Google Gemini API key: https://aistudio.google.com/apikey
