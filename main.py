@@ -1,6 +1,6 @@
 import os
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional # Import Optional
 from dotenv import load_dotenv, set_key, find_dotenv
 from browser_use import Agent
 from browser_use.browser import browser
@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 import logging
 import threading
 from gradio_interface import create_gradio_interface
-from filelock import FileLock
+from filelock import FileLock # Import FileLock
 
 # Enhanced logging configuration
 logging.basicConfig(
@@ -42,7 +42,7 @@ BrowserContext = browser.BrowserContext
 class LLMManager:
     """Manages multiple LLM providers with API key verification and management"""
 
-    _env_lock = FileLock(".env.lock")
+    _env_lock = FileLock(".env.lock") # Initialize FileLock
 
     MODELS = {
         "1": {
@@ -420,12 +420,30 @@ async def main_menu():
                     print("\n❌ Task cannot be empty")
                     continue
 
-                try:
-                    print("\nExecuting task...")
-                    await automation.run_task(task, model_id)
-                    print("\n✅ Task completed successfully")
-                except Exception as e:
-                    print(f"\n❌ Error executing task: {str(e)}")
+                while True: # Loop for task continuation
+                    try:
+                        print("\nExecuting task...")
+                        await automation.run_task(task, model_id)
+                        print("\n✅ Task completed successfully")
+
+                        another_task = input("Perform another task? (y/n): ").strip().lower()
+                        if another_task == 'n':
+                            break # Exit inner loop, back to main menu
+                        elif another_task == 'y':
+                            task = input("\nEnter your next task: ").strip() # Ask for next task
+                            if not task:
+                                print("\n❌ Task cannot be empty")
+                                continue # Continue inner loop to ask for task again
+                        else:
+                            print("\n❌ Invalid input. Please enter 'y' or 'n'.")
+                            continue # Continue inner loop to ask y/n again
+
+                    except Exception as e:
+                        print(f"\n❌ Error executing task: {str(e)}")
+                        break # Exit inner loop on error
+
+                if another_task == 'n': # Check if user chose 'n' to break outer loop as well if needed. In this case, no need as break in inner loop goes to main menu options.
+                    pass # No action needed, will go back to main menu options
 
             elif choice == "2":
                 await LLMManager.manage_api_keys()
