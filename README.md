@@ -1,6 +1,6 @@
 # Browser Automation with Gemini AI
 
-- A minimal browser automation setup that integrates AI models
+- A browser automation setup that integrates AI models
 - It takes user input and executes tasks on a Chromium browser
 - User can input tasks via terminal or Gradio web interface
 - Repeat tasks can be executed in alredy open browser session
