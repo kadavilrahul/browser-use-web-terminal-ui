@@ -29,6 +29,10 @@ venv/
 backups/
 
 # Ignore shell scripts, log files, and pid files
-*.sh
 *.log
 *.pid
+
+# Ignore specific shell script files
+setup_file_versioning.sh
+file_versioning.sh
+check_versioning.sh
