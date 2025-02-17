@@ -51,36 +51,39 @@ Go to wordpress order section of xxxx.com, ID:xxxx Password:xxxx and search for 
 ```
 Login to GitHub with username:xxx password:xxx and check notifications
 ```
-## Installation for Windows
+## Installation for Windows (Currently only terminal UI works for windows)
 
 1. Clone the repository:
 ```
-git clone https://github.com/kadavilrahul/browser-use-web-terminal-ui.git
-```
-```
-cd browser-use-web-terminal-ui
+git clone https://github.com/kadavilrahul/browser-use-web-terminal-ui.git; cd browser-use-web-terminal-ui
 ```
 2. Install Python 3.x: Make sure Python is added to your PATH.
+python --version
 
-3. Create a virtual environment:
+3. Create and activate virtual environment:
 ```
-python -m venv venv
-```
-4. Activate the virtual environment:
-```
-venv\Scripts\activate
+python -m venv venv; .\venv\Scripts\activate
 ```
 5. Install the dependencies:
 ```
 pip install -r requirements.txt
 ```
 6. Install Playwright browsers:
+
 ```
-npx playwright install
+python -m playwright install
+```
+```
+python -m playwright install-deps
 ```
 7. Set the API keys as environment variables.
 
-## Running the application (Windows)
+8. Run the application:
+```
+python main.py
+```
+
+If port gets blocked, use the `rerun.bat` file to restart the application without closing the browser.
 
 Create a `run.bat` file with the following content:
 
@@ -94,12 +97,14 @@ call venv\Scripts\activate
 echo Starting the application...
 python main.py
 ```
-
 Run the `run.bat` file.
 
-## Rerun script if port is blocked (Windows)
-
 The `run.bat` script already includes the logic to kill any process using port 7860.
+
+9. Exit the virtual environment:
+```
+deactivate
+```
 
 I will now attempt completion.
 ## Files
