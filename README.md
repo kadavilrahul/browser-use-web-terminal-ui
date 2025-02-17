@@ -33,7 +33,7 @@ bash setup-debian.sh
 
 3. Start the application (make sure your are in right folder in terminal):
 
-Using rerun script (recommended):
+Using run script (recommended):
 ```bash
 bash run.sh
 ```
