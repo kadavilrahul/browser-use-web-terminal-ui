@@ -110,3 +110,4 @@ For any issues or contributions, please open an issue in the repository.
 Note:
 1. This version has web UI with gradio
 2. main.py is running well with gradio
+3. Check updated library https://pypi.org/project/browser-use/
