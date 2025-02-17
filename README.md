@@ -18,6 +18,7 @@ Note: This is simplified and modified version of the original code: https://gith
 - Python 3.x
 - Internet connection
 - Tested on Linux Ubuntu 24.04
+- If you are working on a remote Linux headless machine then you will need a GUI and remote desktop connection to access browser. You can install Chrome remote desktop on a remote Ubuntu machine using this repo https://github.com/kadavilrahul/chrome_remote_desktop
 
 ## Installation for Linux
 
@@ -163,4 +164,4 @@ Note:
 3. Check updated library https://pypi.org/project/browser-use/
 4. Use any IDE with AI support to modify code as per your use.
 5. Modify lines 55, 62 and 69 in main/py to change the LLM model names.
-6. If you are working on a remote Linux headless machine then you will need a GUI and remote desktop connection to access browser. You can install Chrome remote desktop on a remote Ubuntu machine using this repo https://github.com/kadavilrahul/chrome_remote_desktop
+
