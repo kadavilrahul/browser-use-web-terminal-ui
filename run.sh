@@ -5,6 +5,10 @@ set -e
 
 echo "Starting browser automation tool..."
 
+# Kill any process using port 7860
+echo "Killing any process using port 7860..."
+kill -9 $(lsof -t -i :7860) 2>/dev/null || true
+
 # 1. Check if virtual environment exists
 if [ ! -d "venv" ]; then
     echo "Virtual environment not found. Running setup-debian.sh first..."

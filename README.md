@@ -1,4 +1,4 @@
-# Browser Automation with Gemini AI
+# Browser Automation with AI
 
 - A minimal browser automation setup that integrates AI models
 - It takes user input and executes tasks on a Chromium browser
