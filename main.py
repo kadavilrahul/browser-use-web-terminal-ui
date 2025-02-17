@@ -8,10 +8,13 @@ from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 import logging
 import threading
-from gradio_interface import create_gradio_interface
 from filelock import FileLock
 from browser_use.browser import browser
 import pyperclip
+
+# Conditional import for Gradio
+if os.getenv("ENABLE_GRADIO") == "true":
+    from gradio_interface import create_gradio_interface
 
 # Enhanced logging configuration
 logging.basicConfig(
@@ -406,12 +409,28 @@ async def main_menu():
     automation = BrowserAutomation()
 
     try:
+        # Ask if the user wants to enable Gradio
+        use_gradio = input("\nDo you want to enable the Gradio interface? (y/n): ").strip().lower()
+        enable_gradio = use_gradio == 'y'
+
+        if enable_gradio:
+            os.environ["ENABLE_GRADIO"] = "true"
+            print("\nEnabling Gradio interface...")
+        else:
+            os.environ["ENABLE_GRADIO"] = "false"
+            print("\nGradio interface disabled.")
+
         while True:
             print("\n=== Browser Automation System ===")
             print("\nAvailable Actions:")
             print("1. Execute Browser Task")
             print("2. Manage API Keys")
             print("3. Exit")
+
+            # Print a separator to distinguish the terminal interface from the Gradio output
+            if enable_gradio:
+                print("\n--- Gradio interface running in the background. ---")
+                print("(Enter your option after the Gradio information below)")
 
             choice = input("\nSelect action (1-3): ").strip()
 
@@ -430,7 +449,7 @@ async def main_menu():
 
                 print(f"\nUsing {LLMManager.MODELS[model_id]['name']} for task execution")
                 print("\nExample tasks:")
-                print("- Go to wordpress order section of website.com, login with ID:xxx Password:xxx")
+                print("- Go to wordpress order section of website.com login with ID:xxx Password:xxx")
                 print("- Login to GitHub with username:xxx password:xxx and check notifications")
 
                 while True:
@@ -508,22 +527,139 @@ def main():
         # Create instances
         automation = BrowserAutomation()
 
-        # Launch Gradio interface in a separate thread
-        demo = create_gradio_interface(LLMManager, automation)
-        gradio_thread = threading.Thread(
-            target=lambda: demo.launch(server_name="0.0.0.0", server_port=7860, share=True),
-            daemon=True
-        )
-        gradio_thread.start()
-
         # Run the terminal interface in the main thread
-        asyncio.run(main_menu())
+        async def run_with_gradio():
+            await main_menu(automation)
+
+        asyncio.run(run_with_gradio())
 
         print("Program terminated successfully")
 
     except Exception as e:
         logger.error(f"Fatal error in main: {str(e)}")
         print("Program terminated due to an error")
+
+async def main_menu(automation):
+    """Main program loop for terminal interface"""
+
+    try:
+        # Ask if the user wants to enable Gradio
+        use_gradio = input("\nDo you want to enable the Gradio interface? (y/n): ").strip().lower()
+        enable_gradio = use_gradio == 'y'
+
+        if enable_gradio:
+            os.environ["ENABLE_GRADIO"] = "true"
+            print("\nEnabling Gradio interface...")
+            from gradio_interface import create_gradio_interface  # Import here to avoid errors when disabled
+            demo = create_gradio_interface(LLMManager, automation)
+            gradio_thread = threading.Thread(
+                target=lambda: demo.launch(server_name="0.0.0.0", server_port=7860, share=True),
+                daemon=True
+            )
+            gradio_thread.start()
+            print("\nGradio interface running in the background.")
+        else:
+            os.environ["ENABLE_GRADIO"] = "false"
+            print("\nGradio interface disabled.")
+
+        while True:
+            print("\n=== Browser Automation System ===")
+            print("\nAvailable Actions:")
+            print("1. Execute Browser Task")
+            print("2. Manage API Keys")
+            print("3. Exit")
+
+            # Print a separator to distinguish the terminal interface from the Gradio output
+            if enable_gradio:
+                print("\n--- Gradio interface running in the background. ---")
+                print("(Enter your option after the Gradio information below)")
+
+            choice = input("\nSelect action (1-3): ").strip()
+
+            if choice == "1":
+                model_statuses = await LLMManager.list_models()
+                model_id = input("\nSelect AI model number (1-3): ").strip()
+
+                if model_id not in LLMManager.MODELS:
+                    print("\n❌ Invalid model selection. Please try again.")
+                    continue
+
+                if not model_statuses.get(model_id, False):
+                    print(f"\n❌ Invalid or missing API key for {LLMManager.MODELS[model_id]['name']}")
+                    print("Please set up your API key first using option 2")
+                    continue
+
+                print(f"\nUsing {LLMManager.MODELS[model_id]['name']} for task execution")
+                print("\nExample tasks:")
+                print("- Go to wordpress order section of website.com login with ID:xxx Password:xxx")
+                print("- Login to GitHub with username:xxx password:xxx and check notifications")
+
+                while True:
+                    task = input("\nEnter your task (or type 'exit' to go back to the main menu): ").strip()
+                    if task.lower() == "exit":
+                        print("\nReturning to the main menu...")
+                        break
+
+                    if not task:
+                        print("\n❌ Task cannot be empty")
+                        continue
+
+                    try:
+                        print("\nExecuting task...")
+                        # Create message and screenshot queues
+                        message_queue = asyncio.Queue()
+                        screenshot_queue = asyncio.Queue()
+
+                        # Run task with queues
+                        await automation.run_task(
+                            task,
+                            model_id,
+                            message_queue=message_queue,
+                            screenshot_queue=screenshot_queue
+                        )
+
+                        # Get messages and screenshots
+                        messages = []
+                        while not message_queue.empty():
+                            messages.append(await message_queue.get())
+
+                        latest_screenshot = None
+                        while not screenshot_queue.empty():
+                            latest_screenshot = await screenshot_queue.get()
+
+                        print("\n✅ Task completed successfully")
+                        print("\n".join(messages))
+
+                        # Ask if the user wants to perform another task
+                        another_task = input("\nDo you want to perform another task? (y/n): ").strip().lower()
+                        if another_task == 'n':
+                            print("\nReturning to the main menu...")
+                            break
+                        elif another_task != 'y':
+                            print("\n❌ Invalid input. Returning to the main menu...")
+                            break
+
+                    except Exception as e:
+                        print(f"\n❌ Error executing task: {str(e)}")
+                        break
+
+            elif choice == "2":
+                await LLMManager.manage_api_keys()
+
+            elif choice == "3":
+                print("\nExiting program...")
+                await automation.cleanup()
+                break
+
+            else:
+                print("\n❌ Invalid choice. Please select 1-3.")
+
+    except KeyboardInterrupt:
+        print("\n\nProgram interrupted by user")
+        await automation.cleanup()
+    except Exception as e:
+        logger.error(f"Unexpected error in main_menu: {str(e)}")
+        await automation.cleanup()
 
 if __name__ == "__main__":
     main()

@@ -3,7 +3,7 @@
 # Exit on any error
 set -e
 
-echo "Starting browser automation tool with Gradio interface..."
+echo "Starting browser automation tool..."
 
 # 1. Check if virtual environment exists
 if [ ! -d "venv" ]; then
@@ -34,6 +34,10 @@ if [ ! -f ".env" ]; then
         exit 1
     fi
 fi
+
+# Install requirements
+echo "Installing requirements..."
+pip install -r requirements.txt
 
 # Run the main application
 echo "Starting the application..."
