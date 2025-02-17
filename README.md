@@ -19,7 +19,7 @@ Note: This is simplified and modified version of the original code: https://gith
 - Internet connection
 - Tested on Linux Ubuntu 24.04
 
-## Installation
+## Installation for Linux
 
 1. Clone the repository:
 ```bash
@@ -50,7 +50,57 @@ Go to wordpress order section of xxxx.com, ID:xxxx Password:xxxx and search for 
 ```
 Login to GitHub with username:xxx password:xxx and check notifications
 ```
+## Installation for Windows
 
+1. Clone the repository:
+```
+git clone https://github.com/kadavilrahul/browser-use-web-terminal-ui.git
+```
+```
+cd browser-use-web-terminal-ui
+```
+2. Install Python 3.x: Make sure Python is added to your PATH.
+
+3. Create a virtual environment:
+```
+python -m venv venv
+```
+4. Activate the virtual environment:
+```
+venv\Scripts\activate
+```
+5. Install the dependencies:
+```
+pip install -r requirements.txt
+```
+6. Install Playwright browsers:
+```
+npx playwright install
+```
+7. Set the API keys as environment variables.
+
+## Running the application (Windows)
+
+Create a `run.bat` file with the following content:
+
+```batch
+@echo off
+echo Starting browser automation tool...
+echo Killing any process using port 7860...
+taskkill /F /FI "TCP eq 7860"
+echo Activating Python virtual environment...
+call venv\Scripts\activate
+echo Starting the application...
+python main.py
+```
+
+Run the `run.bat` file.
+
+## Rerun script if port is blocked (Windows)
+
+The `run.bat` script already includes the logic to kill any process using port 7860.
+
+I will now attempt completion.
 ## Files
 
 ### Main Files
