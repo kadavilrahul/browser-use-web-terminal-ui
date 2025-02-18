@@ -168,5 +168,5 @@ Note:
 2. main.py is running well with gradio
 3. Check updated library https://pypi.org/project/browser-use/
 4. Use any IDE with AI support to modify code as per your use.
-5. Modify lines 55, 62 and 69 in main/py to change the LLM model names.
+5. Modify lines 55, 62 and 69 in main.py to change the LLM model names.
 
