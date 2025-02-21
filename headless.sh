@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Update package list and install xvfb
-sudo apt-get update
-sudo apt-get install -y xvfb
+# sudo apt-get update
+# sudo apt-get install -y xvfb
 
 
 # Kill any process using port 7860
