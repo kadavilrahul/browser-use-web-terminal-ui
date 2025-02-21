@@ -44,6 +44,11 @@ Rerun script If port is blocked:
 bash rerun.sh
 ```
 
+Rerun on headless mode:
+```bash
+bash headless.sh
+```
+
 4. Example tasks:
 ```
 Go to wordpress order section of xxxx.com, ID:xxxx Password:xxxx and search for latest orders
