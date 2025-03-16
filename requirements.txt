@@ -1,6 +1,7 @@
 browser-use>=0.1.40
 langchain-google-genai>=0.0.5
 python-dotenv>=1.0.0
+playwright>=1.0.0
 gradio
 pyperclip==1.8.2
 PyPDF2
@@ -8,3 +9,4 @@ Flask
 Werkzeug
 python-dotenv
 filelock
+
