@@ -14,7 +14,8 @@ Note: This is simplified and modified version of the original code: https://gith
 - Use of terminal and web interface for input and output
 
 ## System Requirements
-- Ubuntu Linux with GUI (GUI needed for browser access)
+- Ubuntu Linux with GUI (GUI needed for browser access only)
+- For headed mode with browser access login with non root user or the user which has browser installed
 - Python 3.x
 - Internet connection
 - Tested on Linux Ubuntu 24.04
